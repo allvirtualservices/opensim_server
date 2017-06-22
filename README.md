@@ -1,2 +1,2 @@
 # opensim_server
-opensim server
+opensim server v 1.00
