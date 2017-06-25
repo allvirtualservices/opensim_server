@@ -1,0 +1,15 @@
+Server Backup Proceedure
+------------------------
+## Copy the following files & folders into a tar.gz file
+## along with making opensim database dump monthly          
+## and store off site by running make_file_backup.sh.
+
+/home/opensim/opensin/bin/grid/*
+/home/opensim/opensin/bin/config-include/OSSL.ini
+/home/opensim/opensin/bin/HG_Robust.ini
+/home/opensim/opensin/bin/config-include/GridCommon.ini
+/etc/monit/*
+/etc/sudoers
+/etc/mysql/mysql.conf.d/mysqld.cnf 
+/etc/apache2/*
+

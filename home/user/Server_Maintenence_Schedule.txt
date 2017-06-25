@@ -1,0 +1,18 @@
+Server Maintenence Schedule
+---------------------------
+
+Week One: 
+Shutdown & Restart all Sims & Robust using monit 
+
+Week Two: 
+Update Server Operating System using:
+sudo apt-get update
+sudo apt-get upgrade
+
+Week Three: 
+Shutdown & Restart all Sims & Robust using monit
+
+Week Four: 
+Backup complete copy of database from MySQL 
+Backup files using make_file_backup.sh
+Transfer backup files to VM, restore and test backup
