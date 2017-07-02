@@ -1,0 +1,677 @@
+SERVER_SETUP_GUIDE.TXT
+VERSION 1.01 - 26 JUNE 2017
+
+Pre-requisites:
+Root access to a server/VM/VPS via SSH or putty which is running a recent version of Debian or a Debian based Linux Distribution, in the following examples a VM running Ubuntu 16.10 (64 bit) Server Edition was used. Ideally the server should be connected directly to the internet, rather than being behind a router or modem that acts as a firewall 
+
+A basic understanding of using the Linux command line is assumed, however, the following commands, configurations and procedures will be explained in detail, along with the rationale for using them and/or explaining what they do
+
+From this point forwards, these instructions will assume you are logged into the server as the root user (using putty or SSH). The command prompt will show a # symbol. Should you be required to log in using an account other than root, you will be instructed to this effect and the command prompt will then appear as a $ symbol
+
+Installation steps:
+01) Update server software
+02) Install firewall and intrusion prevention software. Configure firewall to allow incoming SSH connections
+03) Create a user account to run opensim
+04) Create RSA key for SSH authentication. Test SSH connectivity using RSA key, disable SSH password authentication on the server
+05) Install and configure apache2, php, mysql and phpmyadmin and add a firewall rule to allow incoming http connections
+06) Install nant
+07) Create opensim database in mysql. Add opensim user into mysql, configure mysql to allow opensim user access to the database
+08) Install opensim source code using git. Compile opensim from source code using nant
+09) Install opensim_server scripts and configuration files using git & configure opensim & /etc/sudoers
+10) Add additional firewall rules to allow incoming opensim connections
+11) Copy default user files into correct place, copy mysql config file into mysql, restart mysql
+12) Install and configure monit, add firewall rules to allow incoming connections to monit
+13) Add an avatar account to opensim, test Opensim connectivity 
+
+
+01) Update server software
+Lets ensure the server software is up-to-date, by using the apt-get command, at the command prompt type: 
+
+# apt-get update 
+
+Then press the enter key. This will query the package repository for a list of updated software. Once the command completes, you'll be back at the # prompt. Now we will download and install the updated software by typing the command:
+
+# apt-get upgrade
+
+Then press the enter key. You will be prompted to install the updated software by the following:
+
+Do you want to continue? [Y/n]
+
+So press the letter y key and then the enter key to continue. This command may take a while to complete, as the updated software is downloaded and installed. Once this has completed, the command prompt will show #
+
+
+02) Install firewall and intrusion prevention software. Configure firewall to allow incoming SSH connections
+
+Now the software on the server is up-to-date, intrusion prevention software can be installed (fail2ban)
+
+Install fail2ban by typing in the following:
+
+# apt-get install fail2ban
+
+As before, press y to accept the installation of fail2ban and its supporting packages
+
+Now fail2ban is installed, it will ensure any repeated, failed login attempts to services such as SSH, web server, ftp etc. will be automatically denied access for a period of 10 minutes. This is purely to discourage crackers from easily being able to use automated password guessing programs to gain unauthorised access to the server 
+
+Although the server is more secure, having installed fail2ban, security can be further improved by enabling an (uncomplicated) firewall, aptly named ufw. If you are using Ubuntu 16.10 Server, this is installed by default, but not enabled. If you are using Debian or some other Debian based distribution, you should install it by typing:
+
+# apt-get install ufw
+
+Accept any prompt to install by pressing the y key, to enable the installation. Although ufw is installed it's not actually enabled. Regardless of which distribution your have you should enable ufw by typing in the following and and pressing the enter key:
+
+# ufw enable
+
+The command line will display the following: 
+
+Command may disrupt existing SSH connections. Proceed with operation (y|n)?
+
+Press the y key to continue
+
+The command line will then display:
+
+Firewall is active and enabled on system startup
+
+Continue by adding a rule to allow SSH connections to the server by typing:
+
+# ufw allow 22/tcp
+
+The command line will then display:
+
+Rule added
+Rule added (v6)
+
+As we don’t want the ip6 rule (as opensim isn't capable of using ip6, currently), the rule can be deleted by typing:
+
+# ufw delete 2
+
+The command line will show:
+
+Proceed with operation (y|n)? y
+
+Press the letter y to continue and note the command line reports:
+
+Rule deleted (v6)
+
+Now check the ufw rules by typing in:
+
+# ufw status numbered
+
+The command line will display:
+
+Status: active
+
+     To                         Action      From
+     --                         ------      ----
+[ 1] 22/tcp                     ALLOW IN    Anywhere
+
+
+03) Create a user account to run opensim
+
+Create a user account for opensim by typing:
+
+# adduser opensim
+
+The command line will display the following:
+
+Adding user `opensim' ...
+Adding new group `opensim' (1001) ...
+Adding new user `opensim' (1001) with group `opensim' ...
+Creating home directory `/home/opensim' ...
+Copying files from `/etc/skel' ...
+Enter new UNIX password: 
+
+Enter the password for the opensim user account, twice, as instructed. The command line will display:
+
+passwd: password updated successfully
+Changing the user information for opensim
+Enter the new value, or press ENTER for the default
+        Full Name []: 
+        
+Press the enter key five times to accept the default settings. The command line will then prompt you to confirm:
+
+Is the information correct? [Y/n]
+
+Press the y key to confirm
+
+Now type:
+
+# exit
+
+Then press the enter key to exit the putty/SSH window
+
+
+04) Create RSA key for SSH authentication. Test SSH connectivity using RSA key, disable SSH password authentication
+
+Login using putty or SSH as the newly created opensim user. Once done, the command prompt will display something similar to:
+
+opensim@opensim-server:~$ 
+
+Your server host name or will appear after the @ symbol and the prompt will display the $ sign, to show your logged as as a normal user. Enter the following command to generate a new RSA key pair:
+
+SSH-keygen -t RSA
+
+The prompt will display:
+
+Generating public/private RSA key pair.
+Enter file in which to save the key (/home/opensim/.SSH/id_rsa):
+
+Press the enter key three times, to accept the default key location and skip creating a passphrase, The command line will display something similar to the following:
+
+The key fingerprint is:
+SHA256:zFGDcO1yJrSgE+iRDFouLuyROfGeb9QI8uUdg6qfkDM opensim@opensim-server
+The key's randomart image is:
++---[RSA 2048]----+
+|..o+  ..+oo      |
+|o.... ..o...     |
+|o+ . o o.o       |
+| o+.+ +.*.o=     |
+|.Bo.=.* S=       |
+|         o.+o.+ .|
+|E..o.            |
+| = ...           |
+|o.o ..           |
++----[SHA256]-----+
+
+Now lets add the opensim users public RSA key to the authorized_keys file by typing in the following:
+
+$ cat .SSH/id_rsa.pub > .SSH/authorized_keys
+
+The cat command usually displays the contents of the file in the commands argument on the command line, but in this case we're redirecting the output to a file called authorized_keys, which is inside the hidden directory named .SSH (in Linux files and folders can be marked as hidden, by prefacing the file or folder name with a period)
+
+Now make the file readable and writeable by the opensim user only by typing:
+
+$ chmod 0600 .SSH/authorized_keys
+
+Lets copy the key pair from the server to the computer you connect to the server with, by typing:
+
+$ cat .SSH/id_rsa
+
+The command line will display a long string of text that begins with -----BEGIN RSA PRIVATE KEY----- and ends with -----END RSA PRIVATE KEY-----
+copy all the text from -----BEGIN RSA ... to .... RSA PRIVATE KEY----- by highlighting it with your mouse, click your right mouse button and choose Copy.
+
+On your computer create a new empty text file, name the file id_rsa, open it and paste the RSA key text you copied from the server earlier. Save the file.
+
+Lets do the same again on the server, but this time for the .SSH/id_rsa.pub key by typing:
+
+$ cat .SSH/id_rsa.pub
+
+The command line will display a long string of text that begins with ssh_rsa and ends with something similar to opensim@your_server copy all the text from SSH-RSA  ... to .... to opensim@your_server by highlighting it with your mouse, click your right mouse button and choose Copy.
+
+The next set of instructions describe installing the RSA keys on a Linux computer, so if you use windows, skip to the paragraph which begins "If you have a windows computer ..."
+
+On your Linux computer create a new empty text file, name the file id_rsa.pub, open it and paste the RSA key text you copied from the server earlier. Save the file.
+
+The private RSA key should be deleted from the server, as it is not needed, and is a security risk if left there, as no-one should be able to see it, or copy it. It should only exist on the computer that you use to connect to the server. Delete the key on the server by typing:
+
+$ rm .SSH/id_rsa
+
+As a security precaution, we can delete the console history by typing on the server command line:
+
+$ history -c
+
+On your Linux computer open your console or terminal and navigate to the directory you copied the keys into. Install the RSA keys by typing the following command:
+
+$ mv id_rsa.pub id_rsa ~/.SSH/
+
+If you have a windows computer, we can add the key into putty, but first lets delete the console history by typing on the server command line:
+
+$ history -c
+
+On your windows pc launch PuTTYgen from the Windows Programs list. Click Conversions from the PuTTY Key Generator menu and select Import key. Navigate to the OpenSSH private key (named id_rsa) and click Open. Under Actions/Save the generated key, select Save private key. Choose an optional passphrase to protect the private key. Save the private key to the desktop as id_rsa.ppk and close PuTTYgen
+
+If you use Linux on your computer, test the keys work by connecting to the server using them, open a terminal or console and type:
+
+$ SSH -i .SSH/id_rsa opensim@your_server_name_or_ip_address
+
+You should then connect to the server as the opensim user, without having to enter a password
+
+If you have a windows computer launch PuTTY from the Windows Programs list. Enter the remote server Host Name or IP address under Session.
+Navigate to Connection > SSH > Auth. Click Browse... under Authentication parameters / Private key file for authentication. Locate the id_rsa.ppk private key and click Open. Finally, click Open again to log into the remote server with key pair authentication
+
+PuTTY should then connect to the server as the opensim user, without prompting you to enter a password
+
+Root logins via SSH are disabled in Ubuntu Server by default, However, upon installation a default user account is created, which has full root access via sudo. Should you wish to login via SSH using that user account, log out from the server as the opensim user and log in as the default user account and repeat the above procedures to create an RSA key for that user account too.
+
+Once all required user accounts have RSA keys installed the password authentication for the SSH service can be disabled, this should be performed as the root user on the server. Lets do this now by typing:
+
+# nano /etc/SSH/sshd_config
+
+Use your cursor keys to move the cursor down through the file until you find the line that says:
+
+PasswordAuthentication yes
+
+Use your cursor keys to move the cursor to the end of the line, press the backspace key three times to delete the word yes and type in the word no. Once done press Ctrl +x and then y to save the file. Reload the sshd service by typing:
+
+# service sshd reload
+
+If you now try connection to the server, without using an RSA key, the server will respond with:
+
+Permission denied (publickey).
+
+This shows that SSH password authentication has been disabled on the server.
+
+
+05) Install and configure apache2, php, mysql and phpmyadmin and add a firewall rule to allow incoming http connections
+
+Log into the server as the root user and type the following commands:
+
+# apt-get update
+
+# apt-get upgrade
+
+Confirm loading additional packages by pressing y, if any are offered. Continue by typing:
+
+# apt-get install mysql-server
+
+Confirm loading packages by pressing y. When prompted for the root MySQL password, enter the password you want to use, twice. Once installation completes, continue by typing:
+
+# apt-get install phpmyadmin
+
+Confirm loading packages by pressing y. When the Configuring phpmyadmin screen appears, press the space bar to select the [ ] apache2 option, the screen will show [*] apache2, press the tab key to select the OK option and press the space to confirm
+
+When prompted Configure database for phpmyadmin with dbconfig-common? answer Yes by pressing the space bar. Enter the password you you want to use for phpmyadmin, twice
+
+Once back at the root prompt, type:
+
+# ufw app list
+
+The command line will show:
+
+Available applications:
+  Apache
+  Apache Full
+  Apache Secure
+  OpenSSH
+  
+Add the rule for Apache web server by typing:
+
+# ufw allow Apache
+
+The command line will show:
+
+Rule added
+Rule added (v6)
+
+Lets check the status of ufw by typing:
+
+# ufw status numbered
+
+The command line will show:
+
+Status: active
+
+     To                         Action      From
+     --                         ------      ----
+[ 1] 22/tcp                     ALLOW IN    Anywhere                  
+[ 2] Apache                     ALLOW IN    Anywhere                  
+[ 3] Apache (v6)                ALLOW IN    Anywhere (v6) 
+
+As the ip6 rule isn’t required, delete it by typing:
+
+# ufw delete 3
+
+The command line will show:
+
+Deleting:
+ allow Apache
+Proceed with operation (y|n)? y
+
+Accept the deletion by pressing y to confirm, the command line will show:
+
+Rule deleted (v6)
+
+Confirm the ip6 rule has been deleted by typing:
+
+# ufw status numbered
+
+The command line will now show the ip6 rule has been deleted
+
+Status: active
+
+     To                         Action      From
+     --                         ------      ----
+[ 1] 22/tcp                     ALLOW IN    Anywhere                  
+[ 2] Apache                     ALLOW IN    Anywhere
+
+Open your web browser and type in the address of http://my_server_name or_ip_address/phpmyadmin (replace the words my_server_name or_ip_address with either the fully qualified domain name of your server, if you have one, or it's ip address). You should then see the phpmyadmin login screen
+
+
+06) Install nant, git
+
+Now we need to install nant, which we will use to compile opensim later. As root user type the following command and press y to accept loading of packages, when prompted:
+
+# apt-get install nant
+
+
+07) Create opensim database in mysql. Add opensim user into mysql, configure mysql to allow opensim user access to the database
+
+Lets use phpmyadmin to create an opensim database and a mysql user called opensim and grant the newly created mysql user access to only the opensim database. Open your web browser and enter the following web address http://my_server_name or_ip_address/phpmyadmin (replace the words my_server_name or_ip_address with either the fully qualified domain name of your server, if you have one, or it's ip address).
+
+Enter the user name root and the password you entered earlier for the mysql root user
+
+Once logged into phpmyadmin select the Database hyperlink at the top left. Once the Database page appears enter the name opensim in the Create Database text box and click on the create button. once created select the Privileges hyperlink at the top middle of the web page. Under the New section, click on the Add user account hyperlink. Under the Login information section type the word opensim into the right hand User name text entry box. Select the Host name drop down selection and choose localhost then ensure the Password drop down box reads Use text field: and type in the password you want to use for the mysql opensim user in the two text boxes provided. Scroll down to the bottom of the web page and click on the Go button at the bottom right.
+
+Phpmyadmin will confirm the addition of the new account and offer to set the privileges for the opensim user on the opensim database, so scroll to the bottom of the web page  and click on the Go button at the bottom right. Phpmyadmin will confirm the updated the privileges for 'opensim'@'localhost'.
+
+Log out of the server
+
+
+08) Install opensim source code using git. Compile opensim from source code using nant
+
+Log into the server as the opensim user. Enter the following command:
+
+$ git clone git://opensimulator.org/git/opensim
+
+The command line will display:
+
+Cloning into 'opensim'...
+
+The opensim code will be downloaded from the git repository. At the time of writing this guide, the code was around two hundred and fifty megabytes, so it may take some time to download.
+
+Change into the opensim directory by typing:
+
+$ cd opensim
+
+Run the prebuild script by typing:
+
+$ ./runprebuild.sh
+
+Once back at the $ prompt, compile the opensim code by typing:
+
+$ nant
+
+Text will scroll up the console, as opensim compiles. If compilation is successful you should see the message:
+
+BUILD SUCCEEDED
+
+Total time: 20.6 seconds.
+
+Log out from the server
+
+
+09) Install opensim_server scripts and configuration files using git & configure opensim & /etc/sudoers
+
+Log in as the default user. Type the following to download the opensim_server scripts from the github repository:
+
+$ git clone https://github.com/sniksnoodle/opensim_server.git
+
+Should you get an error message similar to command not found, it might be that git is not installed. If that is the case you can download and install git using the following command:
+
+$ sudo apt-get install git
+
+Lets copy the necessary opensim config files into the appropriate opensim directory and then edit them so they will work, finally we'll change the ownership permissions on them so they are owned by the opensim user. Type in the following commands:
+
+$ cd opensim_server/home/opensim/opensim/bin/
+
+$ sudo mv Robust.HG.ini /home/opensim/opensim/bin/
+
+$ sudo mv grid/ /home/opensim/opensim/bin/
+
+$ sudo mv config-include/* /home/opensim/opensim/bin/config-include/
+
+Lets now edit the config files we moved into the opensim directory, so they are configured correctly, essentially this involves amending them so they have the correct ownership and contain the correct server name or ip address for your server and the correct opensim password to connect to the mysql opensim database. Type the following to change the ownership permissions on the new files and directory:
+
+$ sudo chown opensim:opensim /home/opensim/opensim/bin/config-include/GridCommon.ini
+
+$ sudo chown opensim:opensim /home/opensim/opensim/bin/config-include/osslEnable.ini
+
+$ sudo chown opensim:opensim /home/opensim/opensim/bin/Robust.HG.ini
+
+$ sudo chown -R opensim:opensim /home/opensim/opensim/bin/grid/*
+
+$ sudo chown opensim:opensim /home/opensim/opensim/bin/grid
+
+Edit the following files by typing:
+
+$ sudo nano /home/opensim/opensim/bin/config-include/GridCommon.ini
+
+Use the cursor keys to move down the file to the line that reads ConnectionString = "Data Source=localhost;Database=opensim;User ID=opensim;Password=***;Old Guids=true;"
+
+Use the right cursor key, to position the cursor over the ; character just after the *** characters, press the backspace key three times and type in the password for the mysql opensim user that was created previously. Once done press Ctrl +x then y then enter to save the file.
+
+Now edit the Robust.HG.ini file in a similar fashion by typing in the following:
+
+$ sudo nano /home/opensim/opensim/bin/Robust.HG.ini
+ 
+Use the cursor keys to move down the file to the line that reads BaseURL = "http://MyGrid.com" edit the line by changing MyGrid.com to your servers fully qualified domain name or its ip address. Once done, scroll down the file further until you come to the [DatabaseService] section.
+
+Edit the line that reads ConnectionString = "Data Source=localhost;Database=opensim;User ID=opensim;Password=***;Old Guids=true;" 
+
+Replace the *** characters with the password for the mysql opensim user, as we did previously. Scroll down the file until you find the [LoginService] section. Edit the line that reads WelcomeMessage = "Welcome to MyGrid, Avatar!" so it contains a suitable greeting and change the word MyGrid to the fully qualified domain name of your server, or its ip address.
+
+Scroll down the file further until you find the [GridInfoService] section. Change the lines that read gridname = "MyGrid" and gridnick = "MyGrid" with either your fully qualified domain name of your server, or its ip address
+
+Once done press Ctrl +x then y then enter to save the file.
+
+A default set of simulator configuration files has been included in the /home/opensim/opensim/bin/grid/simulator director. We now will edit the details in its Opensim.ini file too. Type the following to edit the file:
+
+$ sudo nano /home/opensim/opensim/bin/grid/simulator/OpenSim.ini
+
+Under the [Const] section, edit the line that reads BaseURL = "http://mygrid.com" to contain your fully qualified domain name of your server, or its ip address. Under the [DataSnapshot] section, change the line that reads gridname = "mygrid.com" similarly. Under the [Groups] section change the lines GroupsServerURI = "http://mygrid.com:8003" and HomeURI = "http://mygrid.com:8002" so they contain your fully qualified domain name of your server, or its ip address. Once done press Ctrl +x then y then enter to save the file.
+
+There is a template file, that similarly needs editing, so type the following:
+
+$ sudo nano /home/opensim/opensim/bin/grid/Templates/TEMPLATE_OpenSim.ini
+
+Edit the file exactly as was done for the OpenSim.ini file above and save it.
+
+The /home/opensim/opensim/bin/grid/Templates/Regions/TEMPLATE_Regions.ini needs editing, so type 
+
+$ sudo nano /home/opensim/opensim/bin/grid/Templates/Regions/TEMPLATE_Regions.ini
+
+Edit the line that reads ExternalHostName = mygrid.com by replacing the word mygrid.com so it contains your fully qualified domain name of your server, or its ip address. Once done press Ctrl +x then y then enter to save the file.
+
+The opensim user needs elevated privileges to allow it to move generated config files into the /etc/monit directory, so type the following command:
+
+$ sudo cat ~/opensim_server/etc/sudoers
+
+Enter the password for the default user when prompted. Highlight the section with your mouse that reads:
+
+# Allow opensim to run several commands to copy files into
+# monit conf directory and restart monit
+opensim ALL=(ALL:ALL) NOPASSWD: /usr/bin/monit reload, /bin/bash move_to_monit.sh, /bin/mv *.conf /etc/monit/conf.d/, /bin/rm move_to_monit.sh
+
+Click the right mouse button and choose Copy. Type the following:
+
+$ sudo nano /etc/sudoers
+
+Use the cursor key to scroll to the bottom of the file, after the line that reads #includedir /etc/sudoers.d press the enter key to add a new line, press the right mouse button and choose Paste. Press Ctrl +x then y to save the file
+
+
+10) Add additional firewall rules to allow incoming opensim connections
+
+As opensim is now configured, we should add some additional firewall rules so that once opensim is running, users will be able to connect to it and be transported into the default simulator. Type the following:
+
+$ sudo ufw allow 8002/tcp
+
+$ sudo ufw allow 9000
+
+$ sudo ufw status numbered
+
+The command line will show:
+
+     To                         Action      From
+     --                         ------      ----
+[ 1] 22/tcp                     ALLOW IN    Anywhere                  
+[ 2] Apache                     ALLOW IN    Anywhere                  
+[ 3] 8002/tcp                   ALLOW IN    Anywhere                  
+[ 4] 9000/udp                   ALLOW IN    Anywhere                  
+[ 5] 8002/tcp (v6)              ALLOW IN    Anywhere (v6)             
+[ 6] 9000 (v6)                  ALLOW IN    Anywhere (v6) 
+
+Delete firewall rule 5 and six by typing:
+
+$ sudo ufw delete 5
+
+Press y to accept the deletion. We should do the same again to delete the last remaining ip6 rule (which has now become rule number 5), so type:
+
+$ sudo ufw delete 5
+
+Press y to accept the deletion.
+
+
+11) Copy default user files into correct place, copy mysql config file into mysql, restart mysql
+
+Move the archive helper script and Server backup and maintenance documents into the default user home directory by typing:
+
+$ mv ~/opensim_server/home/user/* ~/
+
+The MySQL config file needs configuring so it will handle a larger than default packet size, so edit it by typing in the following command:
+
+$ sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf
+
+Enter the password for the default user if prompted. Scroll down the file to find the line that reads:
+
+max_allowed_packet      = 16M
+
+Edit it to change the 16M to read 64M. Once done, Press Ctrl +x then y to save the file. Restart the Mysql service by typing:
+
+$ sudo service mysql restart
+
+
+12) Install and configure monit, add firewall rules to allow incoming connections to monit
+
+Install monit by typing the following:
+
+$ sudo apt-get update
+
+$ sudo apt-get upgrade
+
+$ sudo apt-get install monit
+
+Answer the prompt for the default user password, if asked, Press y to accept the installation of additional packages
+
+In order to use monit, its first required to edit the monitrc configuration file, by typing the following command:
+
+$ sudo nano /etc/monit/monitrc
+
+Scroll down the file until you find the following section:
+
+# set httpd port 2812 and
+#     use address localhost  # only accept connection from localhost
+#     allow localhost        # allow localhost to connect to the server and
+#     allow admin:monit      # require user 'admin' with password 'monit'
+
+Edit the section so it appears as follows:
+
+set httpd port 2812          # and
+#    use address localhost   # only accept connection from localhost
+#    allow localhost         # allow localhost to connect to the server and
+     allow opensim:***       # require user 'opensim' with password '***'
+     
+Replace the *** with the same password you use for your opensim database mysql user (or another if you're particularly security conscious). Once done, Press Ctrl +x then y to save the file.
+
+The config files required by monit can now be copied into the /etc/monit/conf.d/ directory. Do this by entering the following command:
+
+$ sudo mv ~/opensim_server/etc/monit/conf.d/* /etc/monit/conf.d/
+
+The configuration files need to be owned by the root user so change the ownership on them by typing:
+
+$ sudo chown root:root /etc/monit/conf.d/*
+
+Although monit is now installed and configured, its still required to add a firewall rule to allow monit to be controlled via port 2812, so type the following:
+
+$ sudo ufw allow 2812/tcp
+
+Check this has been done by typing:
+
+$ sudo ufw status numbered
+
+The command line will display:
+
+Status: active
+
+     To                         Action      From
+     --                         ------      ----
+[ 1] 22/tcp                     ALLOW IN    Anywhere                  
+[ 2] Apache                     ALLOW IN    Anywhere                  
+[ 3] 8002/tcp                   ALLOW IN    Anywhere                  
+[ 4] 9000                       ALLOW IN    Anywhere                  
+[ 5] 2812/tcp                   ALLOW IN    Anywhere                  
+[ 6] 2812/tcp (v6)              ALLOW IN    Anywhere (v6)
+
+Delete the spurious ip6 rule by typing:
+
+$ sudo ufw delete 6
+
+Answer y when prompted for confirmation of deletion. Additionally, port 53 should be allowed so that DNS can be resolved correctly. To enable this type the following commands:
+
+$ sudo ufw allow 53
+
+As previously, delete the un-needed ip6 rule by typing:
+
+$ sudo ufw delete 7
+
+Answer y when prompted for confirmation of deletion. Type in:
+
+$ sudo ufw status numbered
+
+The command line should display:
+
+Status: active
+
+     To                         Action      From
+     --                         ------      ----
+[ 1] 22/tcp                     ALLOW IN    Anywhere                  
+[ 2] Apache                     ALLOW IN    Anywhere                  
+[ 3] 8002/tcp                   ALLOW IN    Anywhere                  
+[ 4] 9000                       ALLOW IN    Anywhere                  
+[ 5] 2812/tcp                   ALLOW IN    Anywhere                  
+[ 6] 53                         ALLOW IN    Anywhere
+
+Start monit by typing:
+
+$ sudo monit reload
+
+Log out from putty or SSH 
+
+Open a web browser on your computer and type in the url http://<fully_qualified_domain_name_or_ip_address>:2812
+
+Replace the word <fully_qualified_domain_name_or_ip_address> with your server domain name or its ip address. Log in as user opensim and the opensim mysql user password when the login page appears, verify monit is running and that the mysql, Robust and simulator service are running and being monitored by monit
+
+
+13) Add an avatar account to opensim, test Opensim connectivity 
+
+Log into the server via putty or SSH as the opensim user. Type the following command to verify Robust and opensim are running in side their own screen session
+
+$ screen ls
+
+You should see something similar to the following on the command line:
+
+There are screens on:
+        4217.Robust     (01/07/17 18:53:31)     (Detached)
+        4199.simulator  (01/07/17 18:53:30)     (Detached)
+
+If you get an error after issuing the screen ls command, that says command not found or something similar, the screen program may not be installed. If that is the case connect to the sever via putty or SSH as the default user and type the following command to install screen:
+
+$ sudo apt-get install screen
+
+Assuming there are no errors, as the opensim user connect to the Robust session running inside the screen session by typing the following command:
+
+$ screen -r Robust
+
+Hit the enter a few times until the prompt looks like:
+
+R.O.B.U.S.T.#
+
+Type the following command to create a test user account, with the password test:
+
+create user test user test
+
+Press enter once you've typed the command, Hit enter three times to accept the default settings for Email, User ID and Model name 
+
+When the prompt returns to R.O.B.U.S.T.# press the Ctrl key, while keeping it pressed, tap the a key, release the Ctrl a key and tap the d key. The Robust screen session should then be disconnected, but still running in the background.
+
+Now we should connect to the simulator screen session, by typing:
+
+$ screen -r simulator
+
+The simulator screen session should show its waiting for the simulator to be assigned to an estate, either type in the name of the estate you'd like to use or press enter to accept the default of My Estate, press Enter to accept to assign the test user as the region owner 
+
+You should now be able to start your viewer, add the new grid address and connect to your new opensimulator grid, should you not be able to, most likely you have forgotten to change a setting in one of the config files, so check the settings in Robust.HG.ini, OpenSim.ini, GridCommon.ini and Regions.ini to make sure you’ve not missed anything or mis-typed anything.
+
+If you are able to connect, the the setup is done. Should you wish to, you can log into your server as the default user and remove the opensim_server directory and contents by typing the following commands: 
+
+$ sudo rm -Rf opensim_server/*
+$ sudo rm -Rf opensim_server/.*
+$ sudo rmdir opensim_server
+

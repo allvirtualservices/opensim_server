@@ -1,0 +1,163 @@
+OVERVIEW_AND_SERVER_OPERATION_GUIDE.TXT
+
+Version 0.01 – 23rd June 2017
+
+Who is this code repository suitable for?:
+This code repository is aimed squarely at those who are interested in running their own OpenSim server, 
+it is assumed that a basic knowledge of installing, configuring and maintaining a (Debian or Ubuntu based) 
+linux server, (wether that be a vps or a conventional server) is already in place. Additionally, 
+prior knowledge of installing, configuring and running OpenSim software is also assumed.
+
+References are provided in the REFERENCES.TXT file inside the docs directory, 
+should you wish to research a particular related topic further.
+
+In order to highlight the differences between a standard Hypergrid enabled OpenSim installation 
+running in Grid mode and this Hypergrid enabled OpenSim installation running in Grid mode, 
+let us first consider a standard installation of OpenSim:
+
+Both OpenSim.exe and Robust.exe are contained within the /bin directory, similarly, both the Robust
+and OpenSim log files are written to files inside the /bin directory. The main configuration files for
+Robust and OpenSim are also found inside the /bin directory.
+
+Simulator .ini files are contained inside the /bin/Regions folder.
+All simulators run within a single instance of OpenSim.exe and write log entries into the
+single /bin/OpenSim.log file.
+
+Both Robust and OpenSim programs are run from a single command shell, for each of the programs.
+
+How this installation of OpenSim_Server differs from a standard OpenSim installation:
+OpenSim.ini configuration files are contained within the /bin/grid/<sim_name> directory. Each
+Simulator/OpenSim instance has its own separate .ini file. These configure the http_listener port and
+the name and location of the PID file for that instance. PID files are stored in the /tmp directory
+using the <sim_name>.pid format.
+
+Monit uses the PID files as a method of monitoring if OpenSim/Simulator is running. Additionally
+Monit also monitors the http_listener port to see if an OpenSim instance is running. Robust is also
+monitored by Monit using the Robust.pid file in the /tmp directory along with monitoring port 8002
+for activity.
+
+Each running OpenSim instance and Robust write to a separate .log files, usually in the format
+/bin/<sim_name>.log or /bin/Robust.log, respectively. The settings that control the name of the log
+file of the Simulators is located in the /bin/grid/<sim_name>/OpenSim.exe.ini file.
+Simulator .ini files are contained within the /bin/grid/<sim_name>/Regions directories.
+Each OpenSim/Simulator instance and Robust run within their own screen shell session, using the
+format <PID_number>.<sim_name/Robust>. These screen sessions can then be accessed using
+putty or from the command line.
+
+OpenSim instances/Simulators, Robust, MySQL and Apache can all be started and stopped using
+Monit
+
+Settings for naming, starting and stopping OpenSim screen sessions and instances, along with the
+location of the associated ini files are contained within the start_sim.sh and stop_sim.sh shell scripts
+in /bin/grid/<sim_name>. 
+
+Monit uses the start_Robust.sh and stop_Robust.sh shell scripts located
+in the /bin/grid directory to start and stop Robust and the Robust screen session.
+
+PHPMyAdmin is also installed and can be accessed from the URL
+http://<ip address or fqdn>/phpmyadmin/
+
+Using Monit:
+Monit is installed and can be accessed from the URL http://<ip address or fqdn>:2812
+To stop or start Simulators/Robust/MySQL/Apache click on the name of the item under the Process
+column and once the Process status web page has opened, click on the Start service or Stop service
+button at the bottom of the page.
+
+It may take a minute or more for Monit to detect the change and update the web page, so please be
+patient. Monitoring of a particular process can be stopped by clicking on the Disable Monitoring button
+from within the associated Process status web page.
+
+When manually starting all processes the following order should be used:
+1)MySQL
+2)Robust
+3)Simulators
+4)Apache2
+
+When stopping all processes, the following order should be used:
+1)Apache
+2)Simulators
+3)Robust
+4)MySQL
+
+Using screen:
+To list all screen sessions, enter the command screen -list using putty or from within the shell.
+To attach to a running screen session, enter the command screen -r <name of screen session>.
+To leave an attached screen session press CTRL-A, D (Press down on the left CTRL key, and while
+CTRL is held down also tap the A key, then release the CTRL key and press the D key).
+
+To manually shutdown a Simulator or Robust process, attach to the screen session (as mentioned
+above), enter the shutdown command. Once the prompt displays the $ sign, type the word exit and
+press the enter key. This will completely close the screen session.
+
+To kill ALL running screen sessions enter the command pkill screen (Use only in emergencies!)
+
+Adding Simulators:
+To add a simulator, run the create_simulator.sh shell script by entering the following command in
+the shell ./create_simulator.sh. In order for the command to succeed you first need to ensure that the
+present working directory is the /bin/grid directory.
+
+The script works by copying template ini and config files from /bin/grid/Templates into a newly
+created directory /bin/grid/<sim_name>. The default values in the template file are then replaced
+with the values entered into the script, earlier. A specially created Monit config file for the Simulator
+is then moved into the /etc/monit/conf.d directory, and Monit is reloaded, so the new Simulator is
+available via Monit. Additionally start_sim.sh and stop_sim.sh are created, which are used by Monit
+to start and stop the Simulator.
+
+Listing used Simulator ports:
+To list the simulator ports in use, run the simulator_info.sh shell script inside the /bin/grid directory
+by entering the following command in the shell ./simulator_info.sh. In order for the command to
+succeed you first need to ensure that the present working directory is the /home/opensim directory.
+
+Checking server bandwidth/network speed:
+The python script speedtest.py in the /home/opensim directory can be run by entering the following
+command in the shell ./speedtest.py. In order for the command to succeed you first need to ensure
+that the present working directory is the /home/opensim directory.
+
+Troubleshooting:
+If a Simulator fails to start or stop when using Monit, the following information may prove useful:
+When Monit uses any start and stop shell scripts, it automatically creates an associated text file
+inside the /tmp directory. These are named according the the name of the Simulator or process and
+end with the file extension .out.
+
+These .out files can be opened with any suitable text editor, and if not blank, may contain useful
+error messages.
+
+Occasionally Monit may start too many screen sessions for a given process, or if in the case of
+Monit stopping a Simulator or Process, it may fail to exit the screen session cleanly. In such cases,
+its advised to use the screen commands described earlier to establish which screen session is at
+fault, and close it manually.
+
+Software & commands used:
+apache2
+bash
+cut
+fail2ban
+find
+git
+grep
+iptables
+kill
+monit
+mono-4.0-gac                
+mono-csharp-shell
+mono-devel
+mono-gac
+mono-mcs
+mono-runtime
+mono-runtime-common
+mono-runtime-sgen
+mono-xbuild
+mysql-server
+nant
+openssh-server
+php
+phpmyadmin
+pstree
+python
+screen
+sleep
+stuff
+sudo
+ufw
+xargs
+ 
