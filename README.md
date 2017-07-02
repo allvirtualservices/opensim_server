@@ -26,4 +26,6 @@ However, all comands and procedures are explained, which include:
 12) Installing and configuring monit, adding firewall rule to allow incoming connections to monit
 13) Adding an avatar account to opensim, testing opensim connectivity
 
+Server setup guide is in opensim_server/home/opensim/docs/SERVER_SETUP_GUIDE.TXT
+
 Any and all feedback welcomed & encouraged
