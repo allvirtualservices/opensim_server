@@ -147,7 +147,7 @@ opensim@opensim-server:~$
 
 Your server host name or will appear after the @ symbol and the prompt will display the $ sign, to show your logged as as a normal user. Enter the following command to generate a new RSA key pair:
 
-SSH-keygen -t RSA
+ssh-keygen -t RSA
 
 The prompt will display:
 
