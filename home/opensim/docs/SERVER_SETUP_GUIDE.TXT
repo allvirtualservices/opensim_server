@@ -152,7 +152,7 @@ ssh-keygen -t RSA
 The prompt will display:
 
 Generating public/private RSA key pair.
-Enter file in which to save the key (/home/opensim/.SSH/id_rsa):
+Enter file in which to save the key (/home/opensim/.ssh/id_rsa):
 
 Press the enter key three times, to accept the default key location and skip creating a passphrase, The command line will display something similar to the following:
 
@@ -173,7 +173,7 @@ The key's randomart image is:
 
 Now lets add the opensim users public RSA key to the authorized_keys file by typing in the following:
 
-$ cat .ssh/id_rsa.pub > .SSH/authorized_keys
+$ cat .ssh/id_rsa.pub > .ssh/authorized_keys
 
 The cat command usually displays the contents of the file in the commands argument on the command line, but in this case we're redirecting the output to a file called authorized_keys, which is inside the hidden directory named .SSH (in Linux files and folders can be marked as hidden, by prefacing the file or folder name with a period)
 
