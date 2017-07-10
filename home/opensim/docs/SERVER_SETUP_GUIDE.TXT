@@ -147,12 +147,12 @@ opensim@opensim-server:~$
 
 Your server host name or will appear after the @ symbol and the prompt will display the $ sign, to show your logged as as a normal user. Enter the following command to generate a new RSA key pair:
 
-SSH-keygen -t RSA
+ssh-keygen -t RSA
 
 The prompt will display:
 
 Generating public/private RSA key pair.
-Enter file in which to save the key (/home/opensim/.SSH/id_rsa):
+Enter file in which to save the key (/home/opensim/.ssh/id_rsa):
 
 Press the enter key three times, to accept the default key location and skip creating a passphrase, The command line will display something similar to the following:
 
@@ -173,17 +173,17 @@ The key's randomart image is:
 
 Now lets add the opensim users public RSA key to the authorized_keys file by typing in the following:
 
-$ cat .SSH/id_rsa.pub > .SSH/authorized_keys
+$ cat .ssh/id_rsa.pub > .ssh/authorized_keys
 
 The cat command usually displays the contents of the file in the commands argument on the command line, but in this case we're redirecting the output to a file called authorized_keys, which is inside the hidden directory named .SSH (in Linux files and folders can be marked as hidden, by prefacing the file or folder name with a period)
 
 Now make the file readable and writeable by the opensim user only by typing:
 
-$ chmod 0600 .SSH/authorized_keys
+$ chmod 0600 .ssh/authorized_keys
 
 Lets copy the key pair from the server to the computer you connect to the server with, by typing:
 
-$ cat .SSH/id_rsa
+$ cat .ssh/id_rsa
 
 The command line will display a long string of text that begins with -----BEGIN RSA PRIVATE KEY----- and ends with -----END RSA PRIVATE KEY-----
 copy all the text from -----BEGIN RSA ... to .... RSA PRIVATE KEY----- by highlighting it with your mouse, click your right mouse button and choose Copy.
@@ -192,7 +192,7 @@ On your computer create a new empty text file, name the file id_rsa, open it and
 
 Lets do the same again on the server, but this time for the .SSH/id_rsa.pub key by typing:
 
-$ cat .SSH/id_rsa.pub
+$ cat .ssh/id_rsa.pub
 
 The command line will display a long string of text that begins with ssh_rsa and ends with something similar to opensim@your_server copy all the text from SSH-RSA  ... to .... to opensim@your_server by highlighting it with your mouse, click your right mouse button and choose Copy.
 
@@ -202,7 +202,7 @@ On your Linux computer create a new empty text file, name the file id_rsa.pub, o
 
 The private RSA key should be deleted from the server, as it is not needed, and is a security risk if left there, as no-one should be able to see it, or copy it. It should only exist on the computer that you use to connect to the server. Delete the key on the server by typing:
 
-$ rm .SSH/id_rsa
+$ rm .ssh/id_rsa
 
 As a security precaution, we can delete the console history by typing on the server command line:
 
@@ -210,7 +210,7 @@ $ history -c
 
 On your Linux computer open your console or terminal and navigate to the directory you copied the keys into. Install the RSA keys by typing the following command:
 
-$ mv id_rsa.pub id_rsa ~/.SSH/
+$ mv id_rsa.pub id_rsa ~/.ssh/
 
 If you have a windows computer, we can add the key into putty, but first lets delete the console history by typing on the server command line:
 
@@ -220,7 +220,7 @@ On your windows pc launch PuTTYgen from the Windows Programs list. Click Convers
 
 If you use Linux on your computer, test the keys work by connecting to the server using them, open a terminal or console and type:
 
-$ SSH -i .SSH/id_rsa opensim@your_server_name_or_ip_address
+$ ssh -i .ssh/id_rsa opensim@your_server_name_or_ip_address
 
 You should then connect to the server as the opensim user, without having to enter a password
 
@@ -233,7 +233,7 @@ Root logins via SSH are disabled in Ubuntu Server by default, However, upon inst
 
 Once all required user accounts have RSA keys installed the password authentication for the SSH service can be disabled, this should be performed as the root user on the server. Lets do this now by typing:
 
-# nano /etc/SSH/sshd_config
+# nano /etc/ssh/sshd_config
 
 Use your cursor keys to move the cursor down through the file until you find the line that says:
 
