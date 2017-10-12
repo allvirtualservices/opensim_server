@@ -360,11 +360,11 @@ Lets copy the necessary opensim config files into the appropriate opensim direct
 
 $ cd opensim_server/home/opensim/opensim/bin/
 
-$ sudo mv ~/Robust.HG.ini /home/opensim/opensim/bin/
+$ sudo mv Robust.HG.ini /home/opensim/opensim/bin/
 
-$ sudo mv ~/grid/ /home/opensim/opensim/bin/
+$ sudo mv grid/ /home/opensim/opensim/bin/
 
-$ sudo mv ~/config-include/* /home/opensim/opensim/bin/config-include/
+$ sudo mv config-include/* /home/opensim/opensim/bin/config-include/
 
 Lets now edit the config files we moved into the opensim directory, so they are configured correctly, essentially this involves amending them so they have the correct ownership and contain the correct server name or ip address for your server and the correct opensim password to connect to the mysql opensim database. Type the following to change the ownership permissions on the new files and directory:
 
