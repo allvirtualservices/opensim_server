@@ -2,16 +2,12 @@
 opensim server v 1.01
 01/11/2018
 
-********************************************************************************
-*                                                                              *
-*  WARNING - These instructions only work for OpenSim 0.9.0.1 release and      *
-*  earlier. They wont work with OpenSim master development code due to the     *
-*  following differencies: Mono version needs to be 5.11 or higher, nant is    *
-*  is no longer used to compile the code, use xbuild or msbuild instead.       *
-*  The OpenSim mute module has changed, so using the included ini files will   *
-*  cause errors unless you comment out the mute settings in opensim.ini        *
-*                                                                              *
-********************************************************************************
+WARNING - These instructions only work for OpenSim 0.9.0.1 release and
+earlier. They wont work with OpenSim master development code due to the
+following differencies: Mono version needs to be 5.11 or higher, nant is
+is no longer used to compile the code, use xbuild or msbuild instead.
+The OpenSim mute module has changed, so using the included ini files will
+cause errors unless you comment out the mute settings in opensim.ini
 
 Who is this code repository suitable for?:
 
