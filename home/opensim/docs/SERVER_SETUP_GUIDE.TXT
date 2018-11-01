@@ -1,5 +1,16 @@
 SERVER_SETUP_GUIDE.TXT
-VERSION 1.01 - 26 JUNE 2017
+VERSION 1.02 - 01 NOV 2018
+
+********************************************************************************
+*                                                                              *
+*  WARNING - These instructions only work for OpenSim 0.9.0.1 release and      *
+*  earlier. They wont work with OpenSim master development code due to the     *
+*  following differencies: Mono version needs to be 5.11 or higher, nant is    *
+*  is no longer used to compile the code, use xbuild or msbuild instead.       *
+*  The OpenSim mute module has changed, so using the included ini files will   *
+*  cause errors unless you comment out the mute settings in opensim.ini        *
+*                                                                              *
+********************************************************************************
 
 Pre-requisites:
 Root access to a server/VM/VPS via SSH or putty which is running a recent version of Debian or a Debian based Linux Distribution, in the following examples a VM running Ubuntu 16.10 (64 bit) Server Edition was used. Ideally the server should be connected directly to the internet, rather than being behind a router or modem that acts as a firewall 
